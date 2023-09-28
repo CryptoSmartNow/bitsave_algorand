@@ -1,0 +1,19 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 0.4.3
+_src_path: gh:algorandfoundation/algokit-fullstack-template
+author_email: xpanvictor@gmail.com
+author_name: xpanvictor
+cloud_provider: none
+contract_name: bitsave
+deployment_language: python
+ide_vscode: true
+preset_name: starter
+project_name: bitsave_algorand
+python_linter: none
+use_dispenser: false
+use_github_actions: true
+use_python_black: true
+use_python_mypy: false
+use_python_pip_audit: true
+use_python_pytest: true
+
