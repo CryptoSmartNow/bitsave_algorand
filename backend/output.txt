@@ -1,0 +1,389 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.5, pytest-7.4.2, pluggy-1.3.0
+rootdir: /home/xpan/Documents/web3/bitsave_algorand/backend
+configfile: pyproject.toml
+plugins: cov-4.1.0
+collected 2 items
+
+tests/bitsave_test.py #pragma version 8
+intcblock 0 1
+bytecblock 0x757365725f6368696c645f636f6e74726163745f6964
+txn NumAppArgs
+intc_0 // 0
+==
+bnz main_l8
+txna ApplicationArgs 0
+pushbytes 0x4c5c61ba // "create()void"
+==
+bnz main_l7
+txna ApplicationArgs 0
+pushbytes 0xa0e81872 // "update()void"
+==
+bnz main_l6
+txna ApplicationArgs 0
+pushbytes 0x24378d3c // "delete()void"
+==
+bnz main_l5
+err
+main_l5:
+txn OnCompletion
+pushint 5 // DeleteApplication
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub deletecaster_6
+intc_1 // 1
+return
+main_l6:
+txn OnCompletion
+pushint 4 // UpdateApplication
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub updatecaster_5
+intc_1 // 1
+return
+main_l7:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+assert
+callsub createcaster_4
+intc_1 // 1
+return
+main_l8:
+txn OnCompletion
+intc_1 // OptIn
+==
+bnz main_l10
+err
+main_l10:
+txn ApplicationID
+intc_0 // 0
+!=
+assert
+callsub optin_3
+intc_1 // 1
+return
+
+// create
+create_0:
+proto 0 0
+retsub
+
+// update
+update_1:
+proto 0 0
+txn Sender
+global CreatorAddress
+==
+// unauthorized
+assert
+intc_1 // 1
+return
+
+// delete
+delete_2:
+proto 0 0
+txn Sender
+global CreatorAddress
+==
+// unauthorized
+assert
+intc_1 // 1
+return
+
+// opt_in
+optin_3:
+proto 0 0
+intc_0 // 0
+gtxn 0 Amount
+pushint 2400000 // 2400000
+>
+assert
+txn Sender
+bytec_0 // "user_child_contract_id"
+intc_0 // 0
+app_local_put
+itxn_begin
+pushint 6 // appl
+itxn_field TypeEnum
+pushbytes 0x0820020001311b221240001d361a008004f80ca17812400001003119221231182213104488003923433119221240000100311822124488000223438a0000898a010122310032091244b18104b210320ab21422b2128bffc030b211b3238c00898a00002249361a0122558c018b0188ffce8c008004151f7c758b001650b089 // 0x0820020001311b221240001d361a008004f80ca17812400001003119221231182213104488003923433119221240000100311822124488000223438a0000898a010122310032091244b18104b210320ab21422b2128bffc030b211b3238c00898a00002249361a0122558c018b0188ffce8c008004151f7c758b001650b089
+itxn_field ApprovalProgram
+pushbytes 0x08810043 // 0x08810043
+itxn_field ClearStateProgram
+pushint 9 // 9
+itxn_field GlobalNumByteSlice
+pushint 54 // 54
+itxn_field GlobalNumUint
+itxn_submit
+itxn CreatedApplicationID
+frame_bury 0
+frame_dig 0
+app_params_get AppAddress
+store 1
+store 0
+load 1
+assert
+load 0
+store 2
+itxn_begin
+intc_1 // pay
+itxn_field TypeEnum
+pushint 1400000 // 1400000
+itxn_field Amount
+load 2
+itxn_field Receiver
+itxn_submit
+txn Sender
+bytec_0 // "user_child_contract_id"
+frame_dig 0
+app_local_put
+retsub
+
+// create_caster
+createcaster_4:
+proto 0 0
+callsub create_0
+retsub
+
+// update_caster
+updatecaster_5:
+proto 0 0
+callsub update_1
+retsub
+
+// delete_caster
+deletecaster_6:
+proto 0 0
+callsub delete_2
+retsub
+F<algosdk.transaction.SuggestedParams object at 0x7f06d5145410>
+F
+
+=================================== FAILURES ===================================
+_______________________________ test_says_hello ________________________________
+
+bitsave_client = <algokit_utils.application_client.ApplicationClient object at 0x7f06d5c45e90>
+bitsave_app_spec = ApplicationSpecification(approval_program='#pragma version 8\nintcblock 0 1\nbytecblock 0x757365725f6368696c645f636f6e...e_schema=<algosdk.transaction.StateSchema object at 0x7f06d53b4e10>, bare_call_config={'opt_in': <CallConfig.CALL: 1>})
+
+    def test_says_hello(bitsave_client: ApplicationClient, bitsave_app_spec) -> None:
+>       result = bitsave_client.call(bitsave_contract.hello, name="World")
+E       AttributeError: module 'smart_contracts.bitsave.contract' has no attribute 'hello'
+
+tests/bitsave_test.py:39: AttributeError
+_________________________________ test_opt_in __________________________________
+
+self = <algosdk.v2client.algod.AlgodClient object at 0x7f06d53ecb10>
+method = 'POST', requrl = '/v2/transactions', params = None
+data = b"\x82\xa3sig\xc4@\x9dQN\x1f\xa9~1D\xdb=F\xf3\x0ecE\xff\xb1\xf3\x9b\xcdD\x81g\x0f\xf2\x07\x96\xf4\xe0N\xe4c\x8f\xd9\xa...a3snd\xc4 1\x80&\xea\x94\xf5\xa2\xe1\xe5\x94\xe2s)\xcc\x8a|y\xeb\xab\x03L!N\x99\x04s\xe3\x0b0\xf1\x02+\xa4type\xa4appl"
+headers = {'Content-Type': 'application/x-binary'}, response_format = 'json'
+
+    def algod_request(
+        self,
+        method: str,
+        requrl: str,
+        params: Optional[ParamsType] = None,
+        data: Optional[bytes] = None,
+        headers: Optional[Dict[str, str]] = None,
+        response_format: Optional[str] = "json",
+    ) -> AlgodResponseType:
+        """
+        Execute a given request.
+    
+        Args:
+            method (str): request method
+            requrl (str): url for the request
+            params (ParamsType, optional): parameters for the request
+            data (bytes, optional): data in the body of the request
+            headers (dict, optional): additional header for request
+            response_format (str, optional): format of the response
+    
+        Returns:
+            dict loaded from json response body when response_format == "json"
+            otherwise returns the response body as bytes
+        """
+        header = {"User-Agent": "py-algorand-sdk"}
+    
+        if self.headers:
+            header.update(self.headers)
+    
+        if headers:
+            header.update(headers)
+    
+        if requrl not in constants.no_auth:
+            header.update({constants.algod_auth_header: self.algod_token})
+    
+        if requrl not in constants.unversioned_paths:
+            requrl = api_version_path_prefix + requrl
+        if params:
+            requrl = requrl + "?" + parse.urlencode(params)
+    
+        req = Request(
+            self.algod_address + requrl,
+            headers=header,
+            method=method,
+            data=data,
+        )
+    
+        try:
+>           resp = urlopen(req)
+
+.venv/lib/python3.11/site-packages/algosdk/v2client/algod.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/urllib/request.py:216: in urlopen
+    return opener.open(url, data, timeout)
+/usr/lib/python3.11/urllib/request.py:525: in open
+    response = meth(req, response)
+/usr/lib/python3.11/urllib/request.py:634: in http_response
+    response = self.parent.error(
+/usr/lib/python3.11/urllib/request.py:563: in error
+    return self._call_chain(*args)
+/usr/lib/python3.11/urllib/request.py:496: in _call_chain
+    result = func(*args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <urllib.request.HTTPDefaultErrorHandler object at 0x7f06d53b7650>
+req = <urllib.request.Request object at 0x7f06d51459d0>
+fp = <http.client.HTTPResponse object at 0x7f06d556bcd0>, code = 400
+msg = 'Bad Request', hdrs = <http.client.HTTPMessage object at 0x7f06d53aab50>
+
+    def http_error_default(self, req, fp, code, msg, hdrs):
+>       raise HTTPError(req.full_url, code, msg, hdrs, fp)
+E       urllib.error.HTTPError: HTTP Error 400: Bad Request
+
+/usr/lib/python3.11/urllib/request.py:643: HTTPError
+
+During handling of the above exception, another exception occurred:
+
+bitsave_client = <algokit_utils.application_client.ApplicationClient object at 0x7f06d5c45e90>
+algod_client = <algosdk.v2client.algod.AlgodClient object at 0x7f06d53ecb10>
+
+    def test_opt_in(bitsave_client: ApplicationClient, algod_client: AlgodClient) -> None:
+        atc = AtomicTransactionComposer()
+        sp = algod_client.suggested_params()
+        print(sp)
+        ptxn = transaction.PaymentTxn(
+                sender=acct2.address,
+                amt=3_000_000,
+                sp=sp,
+                receiver=bitsave_client.app_address
+            )
+        join = transaction.ApplicationOptInTxn(
+            sender=acct2.address,
+            sp=sp,
+            index=bitsave_client.app_id,
+            accounts=[acct2.address],
+            app_args=[],
+            foreign_apps=[0]
+        )
+    
+        ptxn_w_signer = TransactionWithSigner(ptxn, acct2.signer)
+        jtxn_w_signer = TransactionWithSigner(join, acct2.signer)
+        atc.add_transaction(ptxn_w_signer)
+        atc.add_transaction(jtxn_w_signer)
+        atc.build_group()
+>       response = bitsave_client.execute_atc(atc)
+
+tests/bitsave_test.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.11/site-packages/algokit_utils/application_client.py:1144: in execute_atc
+    return execute_atc_with_logic_error(
+.venv/lib/python3.11/site-packages/algokit_utils/application_client.py:1279: in execute_atc_with_logic_error
+    raise ex
+.venv/lib/python3.11/site-packages/algokit_utils/application_client.py:1266: in execute_atc_with_logic_error
+    return atc.execute(algod_client, wait_rounds=wait_rounds)
+.venv/lib/python3.11/site-packages/algosdk/atomic_transaction_composer.py:862: in execute
+    self.submit(client)
+.venv/lib/python3.11/site-packages/algosdk/atomic_transaction_composer.py:725: in submit
+    client.send_transactions(self.signed_txns)
+.venv/lib/python3.11/site-packages/algosdk/v2client/algod.py:430: in send_transactions
+    return self.send_raw_transaction(
+.venv/lib/python3.11/site-packages/algosdk/v2client/algod.py:358: in send_raw_transaction
+    resp = self.algod_request("POST", req, data=txn_bytes, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <algosdk.v2client.algod.AlgodClient object at 0x7f06d53ecb10>
+method = 'POST', requrl = '/v2/transactions', params = None
+data = b"\x82\xa3sig\xc4@\x9dQN\x1f\xa9~1D\xdb=F\xf3\x0ecE\xff\xb1\xf3\x9b\xcdD\x81g\x0f\xf2\x07\x96\xf4\xe0N\xe4c\x8f\xd9\xa...a3snd\xc4 1\x80&\xea\x94\xf5\xa2\xe1\xe5\x94\xe2s)\xcc\x8a|y\xeb\xab\x03L!N\x99\x04s\xe3\x0b0\xf1\x02+\xa4type\xa4appl"
+headers = {'Content-Type': 'application/x-binary'}, response_format = 'json'
+
+    def algod_request(
+        self,
+        method: str,
+        requrl: str,
+        params: Optional[ParamsType] = None,
+        data: Optional[bytes] = None,
+        headers: Optional[Dict[str, str]] = None,
+        response_format: Optional[str] = "json",
+    ) -> AlgodResponseType:
+        """
+        Execute a given request.
+    
+        Args:
+            method (str): request method
+            requrl (str): url for the request
+            params (ParamsType, optional): parameters for the request
+            data (bytes, optional): data in the body of the request
+            headers (dict, optional): additional header for request
+            response_format (str, optional): format of the response
+    
+        Returns:
+            dict loaded from json response body when response_format == "json"
+            otherwise returns the response body as bytes
+        """
+        header = {"User-Agent": "py-algorand-sdk"}
+    
+        if self.headers:
+            header.update(self.headers)
+    
+        if headers:
+            header.update(headers)
+    
+        if requrl not in constants.no_auth:
+            header.update({constants.algod_auth_header: self.algod_token})
+    
+        if requrl not in constants.unversioned_paths:
+            requrl = api_version_path_prefix + requrl
+        if params:
+            requrl = requrl + "?" + parse.urlencode(params)
+    
+        req = Request(
+            self.algod_address + requrl,
+            headers=header,
+            method=method,
+            data=data,
+        )
+    
+        try:
+            resp = urlopen(req)
+        except urllib.error.HTTPError as e:
+            code = e.code
+            es = e.read().decode("utf-8")
+            try:
+                e = json.loads(es)["message"]
+            finally:
+>               raise error.AlgodHTTPError(e, code)
+E               algosdk.error.AlgodHTTPError: TransactionPool.Remember: transaction JUP2YHRQITN6BE4Y3VR3457ZV2MKWYO5WXLPZ2NDXDSJ4GGQLURQ: account ZKIOSI4LNXPPOGVRZDI2THOZUDCDXGUI7PJEBCN7TMM3R5FE5XDG4XOGJU balance 1598000 below min 2189000 (0 assets)
+
+.venv/lib/python3.11/site-packages/algosdk/v2client/algod.py:111: AlgodHTTPError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/pyteal/pragma/pragma.py:2
+  /home/xpan/Documents/web3/bitsave_algorand/backend/.venv/lib/python3.11/site-packages/pyteal/pragma/pragma.py:2: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    import pkg_resources
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/bitsave_test.py::test_says_hello - AttributeError: module 'smart...
+FAILED tests/bitsave_test.py::test_opt_in - algosdk.error.AlgodHTTPError: Tra...
+========================= 2 failed, 1 warning in 3.56s =========================
