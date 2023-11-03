@@ -2,7 +2,7 @@
 from typing import Final
 from pyteal import (
     Seq, Subroutine, Concat, Bytes, TealType, Expr, \
-    abi, TxnType, InnerTxnBuilder, InnerTxn, TxnField, \
+    abi, TxnType, InnerTxnBuilder, TxnField, \
     Global, Int, Addr, If
 )
 import beaker

@@ -6,16 +6,10 @@ from pyteal import (
     App,
     AppParam,
     Addr,
-    TealType,
-    Log,
-    Global,
-    Expr,
-    Approve,
     Seq,
     Concat,
     Bytes,
     InnerTxnBuilder,
-    InnerTxn,
     TxnType,
     TxnField,
     Txn,
@@ -25,12 +19,11 @@ from pyteal import (
     ScratchVar,
     If,
     Assert,
-    Gtxn,
-    Subroutine,
 )
 
 ### Child contract
 from smart_contracts.bitsave.contract_child import bitsave_child_app
+from smart_contracts.bitsave import contract_child as bitsave_child_contract
 from smart_contracts.utils import send_token
 from algosdk.encoding import decode_address
 from smart_contracts.constants import BITSAVE_ADDRESS
@@ -75,8 +68,8 @@ def delete():
 
 
 # -------------> Opt a new user into bitsave
-@bitsave.opt_in  # TODO: bare = True
-def opt_in(*, output: pt.abi.Uint64):
+@bitsave.opt_in(bare=True)  # TODO: bare = True
+def opt_in():
     """
     Opt in does a bit of operations
     1. Creates a child contract for the user and gets the id
@@ -110,7 +103,7 @@ def opt_in(*, output: pt.abi.Uint64):
         # store the child app id in user's local storage
         bitsave.state.user_child_contract_id[pt.Txn.sender()].set(child_id.get()),
         # return the child app id
-        output.set(child_id.get()),
+        # output.set(child_id.get()),
     )
 
 
@@ -158,7 +151,7 @@ def create_savings(
             Seq(
                 InnerTxnBuilder.MethodCall(
                     app_id=bitsave.state.user_child_contract_id[Txn.sender()],
-                    method_signature=bitsave_child_app.opt_contract_to_token.method_signature(),
+                    method_signature=bitsave_child_contract.opt_contract_to_token.method_signature(),
                     args=[asset_id],
                 ),
                 InnerTxnBuilder.Next(),
@@ -170,7 +163,7 @@ def create_savings(
         InnerTxnBuilder.Next(),
         InnerTxnBuilder.MethodCall(
             app_id=bitsave.state.user_child_contract_id[Txn.sender()],
-            method_signature=bitsave_child_app.create_savings.method_signature(),
+            method_signature=bitsave_child_contract.create_savings.method_signature(),
             args=[
                 name,
                 end_time,

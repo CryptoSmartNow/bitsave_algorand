@@ -13,12 +13,8 @@ from algosdk.atomic_transaction_composer import (
     TransactionWithSigner,
 )
 from algosdk import transaction
+import time
 
-accts = localnet.get_accounts()
-print(accts)
-acct1 = accts.pop()
-acct2 = accts.pop()
-acct3 = accts.pop()
 
 funded_acct = localnet.LocalAccount(
     address="F6WXY5ZY5FWWAQYXPR2QBRX36EH2OCEA6R6MQV66ULIKXLULCGVJFQJA6I",
@@ -26,28 +22,10 @@ funded_acct = localnet.LocalAccount(
 )
 
 
-@pytest.fixture(scope="session")
-def bitsave_app_spec(algod_client: AlgodClient) -> ApplicationSpecification:
-    return bitsave_contract.app.build(algod_client)
-
-
-@pytest.fixture(scope="session")
-def bitsave_client(
-    algod_client: AlgodClient, bitsave_app_spec: ApplicationSpecification
-) -> ApplicationClient:
-    client = ApplicationClient(
-        algod_client,
-        app_spec=bitsave_app_spec,
-        signer=get_localnet_default_account(algod_client),
-    )
-    client.create()
-    return client
-
-
-def test_opt_in(bitsave_client: ApplicationClient, algod_client: AlgodClient) -> None:
+@pytest.fixture(scope="module")
+def childId(bitsave_client: ApplicationClient, algod_client: AlgodClient):
     atc = AtomicTransactionComposer()
     sp = algod_client.suggested_params()
-    print(sp)
     ptxn = transaction.PaymentTxn(
         sender=funded_acct.address,
         amt=3_000_000,
@@ -62,11 +40,53 @@ def test_opt_in(bitsave_client: ApplicationClient, algod_client: AlgodClient) ->
         app_args=[],
         foreign_apps=[0],
     )
-
     ptxn_w_signer = TransactionWithSigner(ptxn, funded_acct.signer)
     jtxn_w_signer = TransactionWithSigner(join, funded_acct.signer)
     atc.add_transaction(ptxn_w_signer)
     atc.add_transaction(jtxn_w_signer)
     atc.build_group()
     response = bitsave_client.execute_atc(atc)
-    print(response.tx_ids)
+
+    result = bitsave_client.call("get_child_id")
+    print(result.return_value)
+    return result.return_value
+
+
+def makePaymentTxn(receiver, amount: int, sp):
+    pay_txn = transaction.PaymentTxn(
+        sender=funded_acct.address, receiver=receiver, amt=amount, sp=sp
+    )
+    return TransactionWithSigner(pay_txn, funded_acct.signer)
+
+
+name_savings = "school"
+
+
+def test_create_savings(
+    bitsave_client: ApplicationClient, algod_client: AlgodClient, childId
+) -> None:
+    atc = AtomicTransactionComposer()
+    sp = algod_client.suggested_params()
+    ptxn = makePaymentTxn(bitsave_client.app_address, 2_000_000)
+    atc.add_method_call(
+        app_id=bitsave_client.app_id,
+        method=bitsave_contract.create_savings.method_signature(),
+        sender=funded_acct.address,
+        signer=funded_acct.signer,
+        sp=sp,
+        method_args=[
+            ptxn,
+            name_savings,
+            (round(time()) + 1_000_000),
+            2,
+            1,
+            0,
+            1,
+            30_000,
+        ],
+        foreign_apps=[childId],
+        # accounts=[BITSAVE_ADDRESS],
+    )
+    result = atc.execute(bitsave_client, 2)
+    for res in result.abi_results:
+        print(res.return_value)
