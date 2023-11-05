@@ -1,0 +1,386 @@
+#pragma version 8
+intcblock 0 1 4 6
+bytecblock 0x757365725f6368696c645f636f6e74726163745f6964 0x45bbcde15e6f1fca8ca31bece00ea8899a528c38ada1cf34dc64fd01144538ca 0x00
+txn NumAppArgs
+intc_0 // 0
+==
+bnz main_l10
+txna ApplicationArgs 0
+pushbytes 0x4c5c61ba // "create()void"
+==
+bnz main_l9
+txna ApplicationArgs 0
+pushbytes 0xa0e81872 // "update()void"
+==
+bnz main_l8
+txna ApplicationArgs 0
+pushbytes 0x24378d3c // "delete()void"
+==
+bnz main_l7
+txna ApplicationArgs 0
+pushbytes 0xacb2dc04 // "create_savings(pay,string,uint64,uint64,asset,uint64,uint8,uint64)uint64"
+==
+bnz main_l6
+err
+main_l6:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub createsavingscaster_8
+intc_1 // 1
+return
+main_l7:
+txn OnCompletion
+pushint 5 // DeleteApplication
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub deletecaster_7
+intc_1 // 1
+return
+main_l8:
+txn OnCompletion
+intc_2 // UpdateApplication
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub updatecaster_6
+intc_1 // 1
+return
+main_l9:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+assert
+callsub createcaster_5
+intc_1 // 1
+return
+main_l10:
+txn OnCompletion
+intc_1 // OptIn
+==
+bnz main_l12
+err
+main_l12:
+txn ApplicationID
+intc_0 // 0
+!=
+assert
+callsub optin_3
+intc_1 // 1
+return
+
+// create
+create_0:
+proto 0 0
+retsub
+
+// update
+update_1:
+proto 0 0
+txn Sender
+global CreatorAddress
+==
+// unauthorized
+assert
+intc_1 // 1
+return
+
+// delete
+delete_2:
+proto 0 0
+txn Sender
+global CreatorAddress
+==
+// unauthorized
+assert
+intc_1 // 1
+return
+
+// opt_in
+optin_3:
+proto 0 0
+intc_0 // 0
+gtxn 0 Amount
+pushint 2400000 // 2400000
+>
+assert
+txn Sender
+bytec_0 // "user_child_contract_id"
+intc_0 // 0
+app_local_put
+itxn_begin
+intc_3 // appl
+itxn_field TypeEnum
+pushbytes 0x08200300010426030004151f7c752045bbcde15e6f1fca8ca31bece00ea8899a528c38ada1cf34dc64fd01144538ca311b2212400071361a008004f80ca17812400055361a00800482e8a88a12400039361a008004f61168341240001d361a0080043259251112400001003119221231182213104488032d2343311922123118221310448802f42343311922123118221310448802a123433119221231182213104488027823433119221240000100311822124488007423438a010180046e616d658bff50898a01018006616d6f756e748bff50898a0101800a73746172745f74696d658bff50898a01018008656e645f74696d658bff50898a01018008696e7465726573748bff50898a0101800770656e616c74798bff50898a0101800861737365745f69648bff50898a0000898a010122310032091244b124b210320ab21422b2128bffc030b211b3238c00898a0601223100320912448bfa57020088ff588bfa570200678bfa57020088ff663207678bfa57020088ff6e8bfb678bfa57020088ff858bff678bfa57020088ff8a8bfec030678bfa57020088ff5c8bfd678bfa57020088ff1e8bfc67238c00898a0301223100320912448bfd57020088ff388bfd57020088ff30648bff08678bfd57020088fef08bfe8bfd57020088fee66408678bfd57020088fedb648c00898a0201282247063100320912448bfe57020088ff16648c018bfe57020088feb7648c028bfe57020088fece648c03b132078b030c4000598bfe57020088fecb648c06228c078b07221240003624b2108bffb2148b06b2128b07b2118b01221240001224b2108bffb2148b02b2128b01b21142005e23b2108b02b2088bffb20742005023b2108b06b2088bffb20742ffcb8bfe57020088fe83648c048b048b020b81640a8c058b028b05098c028b01221240001224b2102ab2148b05b2128b01b211b642ff9623b2108b05b2082ab20742ffefb38bfe57020088fdfc698bfe57020088fe47698bfe57020088fe2e698bfe57020088fe14698bfe57020088fde7698bfe57020088fdf1698bfe57020088fdb96980170015536176696e6773206461746120636c6561726564218c00898a00002249361a0122558c018b0188fe018c00298b001650b0898a00002228224704361a018c01361a02178c02361a03178c03361a04178c04361a0522558c05361a06178c068b018b028b038b048b058b0688fddd8c00298b001650b0898a000022282249361a018c01361a02178c02361a03178c038b018b028b0388fe138c00298b001650b0898a0000284702361a018c01361a028c028b018b0288fe338c00298b0050b089 // 0x08200300010426030004151f7c752045bbcde15e6f1fca8ca31bece00ea8899a528c38ada1cf34dc64fd01144538ca311b2212400071361a008004f80ca17812400055361a00800482e8a88a12400039361a008004f61168341240001d361a0080043259251112400001003119221231182213104488032d2343311922123118221310448802f42343311922123118221310448802a123433119221231182213104488027823433119221240000100311822124488007423438a010180046e616d658bff50898a01018006616d6f756e748bff50898a0101800a73746172745f74696d658bff50898a01018008656e645f74696d658bff50898a01018008696e7465726573748bff50898a0101800770656e616c74798bff50898a0101800861737365745f69648bff50898a0000898a010122310032091244b124b210320ab21422b2128bffc030b211b3238c00898a0601223100320912448bfa57020088ff588bfa570200678bfa57020088ff663207678bfa57020088ff6e8bfb678bfa57020088ff858bff678bfa57020088ff8a8bfec030678bfa57020088ff5c8bfd678bfa57020088ff1e8bfc67238c00898a0301223100320912448bfd57020088ff388bfd57020088ff30648bff08678bfd57020088fef08bfe8bfd57020088fee66408678bfd57020088fedb648c00898a0201282247063100320912448bfe57020088ff16648c018bfe57020088feb7648c028bfe57020088fece648c03b132078b030c4000598bfe57020088fecb648c06228c078b07221240003624b2108bffb2148b06b2128b07b2118b01221240001224b2108bffb2148b02b2128b01b21142005e23b2108b02b2088bffb20742005023b2108b06b2088bffb20742ffcb8bfe57020088fe83648c048b048b020b81640a8c058b028b05098c028b01221240001224b2102ab2148b05b2128b01b211b642ff9623b2108b05b2082ab20742ffefb38bfe57020088fdfc698bfe57020088fe47698bfe57020088fe2e698bfe57020088fe14698bfe57020088fde7698bfe57020088fdf1698bfe57020088fdb96980170015536176696e6773206461746120636c6561726564218c00898a00002249361a0122558c018b0188fe018c00298b001650b0898a00002228224704361a018c01361a02178c02361a03178c03361a04178c04361a0522558c05361a06178c068b018b028b038b048b058b0688fddd8c00298b001650b0898a000022282249361a018c01361a02178c02361a03178c038b018b028b0388fe138c00298b001650b0898a0000284702361a018c01361a028c028b018b0288fe338c00298b0050b089
+itxn_field ApprovalProgram
+pushbytes 0x08810043 // 0x08810043
+itxn_field ClearStateProgram
+pushint 9 // 9
+itxn_field GlobalNumByteSlice
+pushint 54 // 54
+itxn_field GlobalNumUint
+itxn_submit
+itxn CreatedApplicationID
+frame_bury 0
+frame_dig 0
+app_params_get AppAddress
+store 1
+store 0
+load 1
+assert
+load 0
+store 2
+itxn_begin
+intc_1 // pay
+itxn_field TypeEnum
+pushint 1400000 // 1400000
+itxn_field Amount
+load 2
+itxn_field Receiver
+itxn_submit
+txn Sender
+bytec_0 // "user_child_contract_id"
+frame_dig 0
+app_local_put
+retsub
+
+// create_savings
+createsavings_4:
+proto 8 1
+intc_0 // 0
+dupn 2
+txn Sender
+bytec_0 // "user_child_contract_id"
+app_local_get
+pushbytes 0x6e616d65 // "name"
+frame_dig -7
+extract 2 0
+concat
+app_global_get_ex
+store 4
+store 3
+load 4
+!
+assert
+frame_dig -8
+gtxns TypeEnum
+intc_2 // axfer
+==
+bnz createsavings_4_l10
+frame_dig -8
+gtxns Amount
+frame_dig -1
+-
+createsavings_4_l2:
+store 5
+load 5
+frame_bury 1
+frame_dig -4
+txnas Assets
+frame_bury 2
+txn Sender
+bytec_0 // "user_child_contract_id"
+app_local_get
+app_params_get AppAddress
+store 7
+store 6
+load 7
+assert
+itxn_begin
+frame_dig -2
+intc_1 // 1
+!=
+bnz createsavings_4_l9
+createsavings_4_l3:
+frame_dig 2
+intc_0 // 0
+==
+bnz createsavings_4_l8
+intc_2 // axfer
+itxn_field TypeEnum
+load 6
+itxn_field AssetReceiver
+frame_dig 1
+itxn_field AssetAmount
+frame_dig 2
+itxn_field XferAsset
+createsavings_4_l5:
+itxn_next
+frame_dig 2
+intc_0 // 0
+==
+bnz createsavings_4_l7
+intc_2 // axfer
+itxn_field TypeEnum
+bytec_1 // IW543YK6N4P4VDFDDPWOADVIRGNFFDBYVWQ46NG4MT6QCFCFHDFBZQ35RA
+itxn_field AssetReceiver
+frame_dig -1
+itxn_field AssetAmount
+frame_dig 2
+itxn_field XferAsset
+b createsavings_4_l11
+createsavings_4_l7:
+intc_1 // pay
+itxn_field TypeEnum
+frame_dig -1
+itxn_field Amount
+bytec_1 // IW543YK6N4P4VDFDDPWOADVIRGNFFDBYVWQ46NG4MT6QCFCFHDFBZQ35RA
+itxn_field Receiver
+b createsavings_4_l11
+createsavings_4_l8:
+intc_1 // pay
+itxn_field TypeEnum
+frame_dig 1
+itxn_field Amount
+load 6
+itxn_field Receiver
+b createsavings_4_l5
+createsavings_4_l9:
+intc_3 // appl
+itxn_field TypeEnum
+txn Sender
+bytec_0 // "user_child_contract_id"
+app_local_get
+itxn_field ApplicationID
+frame_dig -4
+txnas Assets
+itxn_field Assets
+pushbytes 0xf80ca178 // "opt_contract_to_token(asset)uint64"
+itxn_field ApplicationArgs
+bytec_2 // 0x00
+itxn_field ApplicationArgs
+itxn_next
+b createsavings_4_l3
+createsavings_4_l10:
+frame_dig -8
+gtxns AssetAmount
+frame_dig -1
+-
+b createsavings_4_l2
+createsavings_4_l11:
+itxn_next
+intc_3 // appl
+itxn_field TypeEnum
+txn Sender
+bytec_0 // "user_child_contract_id"
+app_local_get
+itxn_field ApplicationID
+frame_dig -4
+txnas Assets
+itxn_field Assets
+pushbytes 0x82e8a88a // "create_savings(string,uint64,uint64,uint64,asset,uint64)uint64"
+itxn_field ApplicationArgs
+frame_dig -7
+itxn_field ApplicationArgs
+frame_dig -6
+itob
+itxn_field ApplicationArgs
+load 5
+itob
+itxn_field ApplicationArgs
+frame_dig -3
+itob
+itxn_field ApplicationArgs
+bytec_2 // 0x00
+itxn_field ApplicationArgs
+frame_dig -5
+itob
+itxn_field ApplicationArgs
+txn Sender
+itxn_field Accounts
+bytec_1 // 0x45bbcde15e6f1fca8ca31bece00ea8899a528c38ada1cf34dc64fd01144538ca
+itxn_field Accounts
+itxn_submit
+intc_1 // 1
+frame_bury 0
+retsub
+
+// create_caster
+createcaster_5:
+proto 0 0
+callsub create_0
+retsub
+
+// update_caster
+updatecaster_6:
+proto 0 0
+callsub update_1
+retsub
+
+// delete_caster
+deletecaster_7:
+proto 0 0
+callsub delete_2
+retsub
+
+// create_savings_caster
+createsavingscaster_8:
+proto 0 0
+intc_0 // 0
+dup
+pushbytes 0x // ""
+intc_0 // 0
+dupn 5
+txna ApplicationArgs 1
+frame_bury 2
+txna ApplicationArgs 2
+btoi
+frame_bury 3
+txna ApplicationArgs 3
+btoi
+frame_bury 4
+txna ApplicationArgs 4
+intc_0 // 0
+getbyte
+frame_bury 5
+txna ApplicationArgs 5
+btoi
+frame_bury 6
+txna ApplicationArgs 6
+intc_0 // 0
+getbyte
+frame_bury 7
+txna ApplicationArgs 7
+btoi
+frame_bury 8
+txn GroupIndex
+intc_1 // 1
+-
+frame_bury 1
+frame_dig 1
+gtxns TypeEnum
+intc_1 // pay
+==
+assert
+frame_dig 1
+frame_dig 2
+frame_dig 3
+frame_dig 4
+frame_dig 5
+frame_dig 6
+frame_dig 7
+frame_dig 8
+callsub createsavings_4
+frame_bury 0
+pushbytes 0x151f7c75 // 0x151f7c75
+frame_dig 0
+itob
+concat
+log
+retsub
