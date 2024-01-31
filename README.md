@@ -2,6 +2,10 @@
 
 This starter full stack project has been generated using AlgoKit. See below for default getting started instructions.
 
+# Project details
+- [Artifacts](https://github.com/CryptoSmartNow/bitsave_algorand/tree/main/backend/smart_contracts/artifacts/bitsave)
+- [Testnet-Deployment](https://app.dappflow.org/explorer/transaction/DF6MSY7JRUAOKQGZD2R3QB6SIQ6ZMIJD2V5ED5G7KG7TS5P6UEYQ)
+
 ## Setup
 
 ### Initial setup
