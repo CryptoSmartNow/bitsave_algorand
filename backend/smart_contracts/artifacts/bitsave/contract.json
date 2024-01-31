@@ -60,7 +60,54 @@
             ],
             "returns": {
                 "type": "uint64"
-            }
+            },
+            "desc": "Interface to create savings"
+        },
+        {
+            "name": "add_to_savings",
+            "args": [
+                {
+                    "type": "pay",
+                    "name": "pay_txn"
+                },
+                {
+                    "type": "string",
+                    "name": "name"
+                },
+                {
+                    "type": "uint64",
+                    "name": "asset_id"
+                },
+                {
+                    "type": "uint64",
+                    "name": "interest"
+                }
+            ],
+            "returns": {
+                "type": "uint64"
+            },
+            "desc": "Interface to add to savings"
+        },
+        {
+            "name": "withdraw_savings",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "name"
+                }
+            ],
+            "returns": {
+                "type": "uint64"
+            },
+            "desc": "Interface to withdraw savings"
+        },
+        {
+            "name": "get_child_id",
+            "args": [],
+            "returns": {
+                "type": "uint64"
+            },
+            "desc": "Returns id of user's child contract"
         }
     ],
     "networks": {},

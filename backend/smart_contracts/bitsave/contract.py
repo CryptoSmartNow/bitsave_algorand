@@ -19,6 +19,8 @@ from pyteal import (
     ScratchVar,
     If,
     Assert,
+    Subroutine,
+    TealType,
 )
 
 ### Child contract
@@ -30,7 +32,7 @@ from smart_contracts.constants import BITSAVE_ADDRESS
 
 
 # Define constants else where please
-OPT_FEE = 2_400_000
+OPT_FEE = int(2.4 * beaker.consts.algo)
 
 
 # State class
@@ -45,6 +47,11 @@ bitsave = beaker.Application(
     state=BitsaveMainState(),
     descr="This is the bitsave parent protocol v2.0",
 )
+
+
+@Subroutine(TealType.bytes)
+def join_keys(group, name):
+    return Concat(group, name)
 
 
 # @bitsave.external
@@ -68,7 +75,7 @@ def delete():
 
 
 # -------------> Opt a new user into bitsave
-@bitsave.opt_in(bare=True)  # TODO: bare = True
+@bitsave.opt_in(bare=True)
 def opt_in():
     """
     Opt in does a bit of operations
@@ -78,14 +85,14 @@ def opt_in():
     :return:
     app_id of the child contact
     """
-    child_contract_pc = beaker.precompiled(bitsave_child_app)  # TODO: child contract
+    child_contract_pc = beaker.precompiled(bitsave_child_app)  # child contract
     return pt.Seq(
         (pay := pt.ScratchVar()).store(pt.Gtxn[0].amount()),
         pt.Assert(pay.load() > pt.Int(OPT_FEE)),
         bitsave.initialize_local_state(),
         pt.InnerTxnBuilder.Execute(
             {
-                **child_contract_pc.get_create_config(),  # TODO: confirm if still follows
+                **child_contract_pc.get_create_config(),
             }
         ),
         (child_id := pt.abi.Uint64()).set(pt.InnerTxn.created_application_id()),
@@ -122,6 +129,7 @@ def create_savings(
     *,
     output: abi.Uint64,
 ):
+    """Interface to create savings"""
     return Seq(
         # is name available
         confirm_name := App.globalGetEx(
@@ -185,85 +193,87 @@ def create_savings(
     )
 
 
-# @bitsave.external
-# def add_to_savings(
-#     pay_txn: abi.PaymentTransaction,
-#     name: abi.String,
-#     asset_id: abi.Uint64,
-#     interest: abi.Uint64,
-#     *,
-#     output: abi.Uint64,
-# ):
-#     return Seq(
-#         # assert that savings name exist else reject txn
-#         confirm_name := App.globalGetEx(
-#             bitsave.state.user_child_contract_id[Txn.sender()],
-#             Concat(Bytes("name"), name.get()),
-#         ),
-#         Assert(confirm_name.hasValue()),
-#         (edited_principal := abi.Uint64()).set(
-#             If(
-#                 pay_txn.get().type_enum() == TxnType.AssetTransfer,
-#                 pay_txn.get().asset_amount(),
-#                 pay_txn.get().amount(),
-#             )
-#         ),
-#         child_address := AppParam.address(
-#             bitsave.state.user_child_contract_id[Txn.sender()]
-#         ),
-#         Assert(child_address.hasValue()),
-#         InnerTxnBuilder.Begin(),
-#         send_token(
-#             asset_id=asset_id, amount=edited_principal, receiver=child_address.value()
-#         ),
-#         InnerTxnBuilder.Next(),
-#         InnerTxnBuilder.MethodCall(
-#             app_id=bitsave.state.user_child_contract_id[Txn.sender()],
-#             method_signature=CC.add_savings.method_signature(),
-#             args=[name, edited_principal, interest],
-#         ),
-#         InnerTxnBuilder.Submit(),
-#         output.set(Int(1)),
-#     )
+@bitsave.external
+def add_to_savings(
+    pay_txn: abi.PaymentTransaction,
+    name: abi.String,
+    asset_id: abi.Uint64,
+    interest: abi.Uint64,
+    *,
+    output: abi.Uint64,
+):
+    """Interface to add to savings"""
+    return Seq(
+        # assert that savings name exist else reject txn
+        confirm_name := App.globalGetEx(
+            bitsave.state.user_child_contract_id[Txn.sender()],
+            Concat(Bytes("name"), name.get()),
+        ),
+        Assert(confirm_name.hasValue()),
+        (edited_principal := abi.Uint64()).set(
+            If(
+                pay_txn.get().type_enum() == TxnType.AssetTransfer,
+                pay_txn.get().asset_amount(),
+                pay_txn.get().amount(),
+            )
+        ),
+        child_address := AppParam.address(
+            bitsave.state.user_child_contract_id[Txn.sender()]
+        ),
+        Assert(child_address.hasValue()),
+        InnerTxnBuilder.Begin(),
+        send_token(
+            asset_id=asset_id, amount=edited_principal, receiver=child_address.value()
+        ),
+        InnerTxnBuilder.Next(),
+        InnerTxnBuilder.MethodCall(
+            app_id=bitsave.state.user_child_contract_id[Txn.sender()],
+            method_signature=bitsave_child_contract.add_savings.method_signature(),
+            args=[name, edited_principal, interest],
+        ),
+        InnerTxnBuilder.Submit(),
+        output.set(Int(1)),
+    )
 
 
-# @bitsave.external
-# def withdraw_savings(name: abi.String, *, output: abi.Uint64):
-#     return Seq(
-#         amount_check := App.globalGetEx(
-#             bitsave.state.user_child_contract_id, join_keys(Bytes("amount"), name.get())
-#         ),
-#         # confirm user has the said savings, else just reject transaction
-#         Assert(amount_check.hasValue()),
-#         # has the savings period ended!
-#         end_time_check := App.globalGetEx(
-#             bitsave.state.user_child_contract_id,
-#             join_keys(Bytes("end_time"), name.get()),
-#         ),
-#         Assert(end_time_check.hasValue()),
-#         # atomic transfer to first send user's savings and then delete from child
-#         InnerTxnBuilder.Begin(),
-#         # delete savings state on child contract!
-#         InnerTxnBuilder.MethodCall(
-#             app_id=bitsave.state.user_child_contract_id,
-#             method_signature=CC.close_savings.method_signature(),
-#             args=[name, Txn.sender()],
-#             extra_fields={
-#                 TxnField.accounts: [
-#                     Txn.sender(),
-#                     Bytes(decode_address(BITSAVE_ADDRESS)),
-#                 ]
-#             },
-#         ),
-#         InnerTxnBuilder.Submit(),
-#         output.set(Int(1)),
-#     )
+@bitsave.external
+def withdraw_savings(name: abi.String, *, output: abi.Uint64):
+    """Interface to withdraw savings"""
+    return Seq(
+        amount_check := App.globalGetEx(
+            bitsave.state.user_child_contract_id, join_keys(Bytes("amount"), name.get())
+        ),
+        # confirm user has the said savings, else just reject transaction
+        Assert(amount_check.hasValue()),
+        # has the savings period ended!
+        end_time_check := App.globalGetEx(
+            bitsave.state.user_child_contract_id,
+            join_keys(Bytes("end_time"), name.get()),
+        ),
+        Assert(end_time_check.hasValue()),
+        # atomic transfer to first send user's savings and then delete from child
+        InnerTxnBuilder.Begin(),
+        # delete savings state on child contract!
+        InnerTxnBuilder.MethodCall(
+            app_id=bitsave.state.user_child_contract_id,
+            method_signature=bitsave_child_contract.close_savings.method_signature(),
+            args=[name, Txn.sender()],
+            extra_fields={
+                TxnField.accounts: [
+                    Txn.sender(),
+                    Bytes(decode_address(BITSAVE_ADDRESS)),
+                ]
+            },
+        ),
+        InnerTxnBuilder.Submit(),
+        output.set(Int(1)),
+    )
 
 
-# @bitsave.external
-# def get_child_id(*, output: abi.Uint64):
-#     """Adds two num together"""
-#     return output.set(bitsave.state.user_child_contract_id[Txn.sender()])
+@bitsave.external
+def get_child_id(*, output: abi.Uint64):
+    """Returns id of user's child contract"""
+    return output.set(bitsave.state.user_child_contract_id[Txn.sender()])
 
 
 app = bitsave
